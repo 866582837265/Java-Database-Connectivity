@@ -1,0 +1,76 @@
+package com.servion.Demo;
+
+// Import required packages
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
+// Create class
+public class SQLJDBC_Connection {
+    // Create Logger
+    private static final Logger logger = Logger.getLogger(SQLJDBC_Connection.class);
+
+    
+    // PostgreSQL database URL, username, and password
+    private static final String URL = "jdbc:postgresql://localhost:1234/postgres"; // Use the correct port
+    private static final String USER = "postgres"; // Change as needed
+    private static final String PASSWORD = "1234"; // Change as needed
+    
+    private static String mobilenumber;
+    
+    public static void main(String[] args) {
+    	PropertyConfigurator.configure(SQLJDBC_Connection.class.getClassLoader().getResource("log4j.properties"));
+        // Call the method to retrieve and store the mobile number
+        retrieveAndStoreMobileNumber("1234567891"); // Change to the desired mobile number
+    }
+
+    // Method to retrieve and store the mobile number
+    private static void retrieveAndStoreMobileNumber(String mobile) {
+    	logger.info("Mobile number retrieved is: "+mobile);
+        Connection connection = null;
+        Statement statement = null;
+        try { 
+            // Load PostgreSQL JDBC Driver
+            Class.forName("org.postgresql.Driver");
+
+            // Establish connection
+            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            logger.info("Connected to PostgreSQL database successfully!");
+
+            statement = connection.createStatement();
+            String sql = "SELECT * FROM customerdetails WHERE mobilenumber='" + mobile + "'";
+
+            ResultSet resultset = statement.executeQuery(sql);
+            
+            if (resultset.next()) {
+                // Store the mobile number
+                mobilenumber = resultset.getString("mobilenumber");
+                String accountdetails = resultset.getString("accountdetails");
+                logger.info("Mobile Number: " + mobilenumber);
+                logger.info("Account Details of the Customer: \n" + accountdetails);
+            } else {
+                logger.warn("No customer with the provided mobile number.");
+            }
+            
+        } catch (ClassNotFoundException e) {
+            logger.error("PostgreSQL JDBC Driver not found.");
+        } catch (SQLException e) {
+            logger.error("Connection failure!");
+           
+        } finally {
+            // Close the connection
+            try {
+                if (statement != null) statement.close();
+                if (connection != null) connection.close();
+                logger.info("Connection closed.");
+            } catch (SQLException ex) {
+                logger.error("Error while closing the connection.", ex);
+
+            }
+        }
+    }
+}
